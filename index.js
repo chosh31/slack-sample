@@ -2,7 +2,7 @@ const { RTMClient } = require('@slack/rtm-api');
 const { google } = require('googleapis');
 const credentials = require('./credentials.json');
 // const token = 'xoxb-646983565972-651803858726-p8NnQTAW8QQamGjleZ5v93y6'; // amy
-const token = 'xoxb-638617199442-650056991104-81W0mVPjxkjHk6mc3om1TLVH';
+const token = 'xoxb-638617199442-650056991104-5ivU5aZUtDQnhD3eMDlWuEAz';
 
 const rtm = new RTMClient(token);
 
@@ -20,65 +20,66 @@ rtm.on('message', event => {
 })();
 
 class GoogleDriveManager {
-    // class GoogleDriveManager {
     constructor() {
         let authScopes = [
             'https://www.googleapis.com/auth/spreadsheets'
-            // 'https://www.googleapis.com/auth/drive.file'
         ];
         
         this.jwtClient = new google.auth.JWT(
             credentials.client_email,
             null,
+            // null,
             credentials.private_key,
             authScopes
         );
-
-        (async () => {
-            this.jwtClient.authorize();
-            console.log(`jwtClient :: authorized!!`);
-        })();
-        
-        this.sheetClient = google.sheets({
-            version: 'v4',
-            auth: this.jwtClient
-        });
     }
 
-    getSheetData() {
-        var request = {
-            // The ID of the spreadsheet to retrieve data from.
-            spreadsheetId: '1y790I47ebDkX_7hIEeH2HUTbj_1lLDscn6WfHMZsuHg',  // TODO: Update placeholder value.
+    prepareNewSheet() {
+        return this._authorizeGoogleClient()
+            .then(() => this._readSheet());
+    }
+
+    _authorizeGoogleClient() {
+        console.log('_authorizeGoogleClient');
+        return this.jwtClient.authorize();
+    }
+
+    _readSheet() {
+        return new Promise((res, rej) => {
+            this.sheetClient = google.sheets({
+                version: 'v4',
+                auth: this.jwtClient
+            });
+
+            const request = {
+                spreadsheetId: credentials.spreadsheetId,
+                range: 'A1',
+                valueRenderOption: 'UNFORMATTED_VALUE',
+                dateTimeRenderOption: 'FORMATTED_STRING',
+                auth: this.jwtClient,
+            };
+            
+            this.sheetClient.spreadsheets.values.get(request, function(err, response) {
+                console.log(`read!!`);
+                if (err) {
+                    console.log(11);
+                    console.error(err);
+                    return;
+                }
+            
+                // TODO: Change code below to process the `response` object:
+                console.log(response);
+
+                res();
+            });
+        })
         
-            // The A1 notation of the values to retrieve.
-            range: 'my-range',  // TODO: Update placeholder value.
-        
-            // How values should be represented in the output.
-            // The default render option is ValueRenderOption.FORMATTED_VALUE.
-            valueRenderOption: '',  // TODO: Update placeholder value.
-        
-            // How dates, times, and durations should be represented in the output.
-            // This is ignored if value_render_option is
-            // FORMATTED_VALUE.
-            // The default dateTime render option is [DateTimeRenderOption.SERIAL_NUMBER].
-            dateTimeRenderOption: '',  // TODO: Update placeholder value.
-        
-            auth: this.jwtClient,
-        };
-        
-        this.sheetClient.spreadsheets.values.get(request, function(err, response) {
-            if (err) {
-                console.error(err);
-                return;
-            }
-        
-            // TODO: Change code below to process the `response` object:
-            console.log(JSON.stringify(response, null, 2));
-        });
     }
 }
 
-const gdm = new GoogleDriveManager();
-console.log(gdm.jwtClient);
+(async () => {
+    const gdm = new GoogleDriveManager();
+    console.log(gdm.jwtClient);
 
-gdm.getSheetData();
+    gdm.prepareNewSheet();
+})();
