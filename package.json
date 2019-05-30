@@ -9,6 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@slack/rtm-api": "^5.0.1"
+    "@slack/rtm-api": "^5.0.1",
+    "async": "^3.0.1",
+    "google-spreadsheet": "^2.0.7",
+    "googleapis": "^40.0.0"
   }
 }
