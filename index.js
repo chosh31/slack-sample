@@ -13,7 +13,6 @@ class GoogleDriveManager {
         this.jwtClient = new google.auth.JWT(
             credentials.client_email,
             null,
-            // null,
             credentials.private_key,
             authScopes
         );
@@ -26,9 +25,12 @@ class GoogleDriveManager {
 
     getKeywordRow(keyword, spreadSheetValues) {
         const keywordElement = spreadSheetValues.find(row => {
-            return row[0].includes(keyword);
+            const keywords = row[0].split(',');
+            return keywords.find(keywordInSheet => keywordInSheet.includes(keyword));
         });
-        return spreadSheetValues[spreadSheetValues.indexOf(keywordElement)][1];
+    
+        if (keywordElement) return spreadSheetValues[spreadSheetValues.indexOf(keywordElement)][1];
+        return '없는 키워드 입니다 ㅠ';
     }
 
     getSheetData(channel, command) {
@@ -38,7 +40,7 @@ class GoogleDriveManager {
 
     _parseSheetData(res) {
         return res.data.values.map((d) => {
-            return d[0];
+            return `\`${d[0]}\``;
         })
     }
 
@@ -89,6 +91,8 @@ const gdm = new GoogleDriveManager();
 rtm.on('message', event => {
     console.info(event);
     const { text, channel } = event;
+    if (text === undefined) return;
+
     if (text.includes('@UK41NV532')) {
         if (text.includes('help')) {
             gdm.getSheetCommands(channel);
@@ -96,7 +100,6 @@ rtm.on('message', event => {
             const command = text.split('>')[1].trim();
             gdm.getSheetData(channel, command);
         }
-        // rtm.sendMessage(text.split('>')[1], channel);
     }
 });
 
